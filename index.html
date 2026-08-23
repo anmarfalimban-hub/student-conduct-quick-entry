@@ -922,14 +922,22 @@ async function checkThirdWarning(student){
 
     if(dateGroups.length < 3) return;
 
-    await logReferralIfNew(student, dateGroups);
-    showThirdWarningAlert(student, dateGroups);
+    const alreadyReferred = await logReferralIfNew(student, dateGroups);
+    if(alreadyReferred){
+      // الطالب مُحوَّل مسبقًا لوكيل شؤون الطلاب — يُفتح نموذج التحويل مباشرة دون نافذة تنبيه وسيطة
+      openReferralReport(student, dateGroups);
+    }else{
+      // أول مرة يصل فيها الطالب لهذا الحد — تُعرض نافذة التنبيه أولًا ليختار المعلم
+      showThirdWarningAlert(student, dateGroups);
+    }
   }catch(e){ /* لا نعطّل حفظ المخالفة إن فشل هذا الفحص */ console.warn(e); }
 }
 
 /* تسجيل الإحالة في قاعدة البيانات (تُقرأ من تبويب "الإحالات" في النظام الرئيسي)
-   لا نكرر نفس الإحالة إذا كان عدد التواريخ لم يتغيّر منذ آخر إحالة مسجَّلة لهذا الطالب */
+   لا نكرر نفس الإحالة إذا كان عدد التواريخ لم يتغيّر منذ آخر إحالة مسجَّلة لهذا الطالب
+   ترجع true إذا كان للطالب إحالة سابقة بالفعل (بغضّ النظر عن تسجيل صف جديد الآن أو لا) */
 async function logReferralIfNew(student, dateGroups){
+  let hadPriorReferral = false;
   try{
     const checkUrl = SUPABASE_URL + "/rest/v1/referrals?student_id=eq." + encodeURIComponent(student.sid)
       + "&select=dates_count&order=id.desc&limit=1";
@@ -938,7 +946,10 @@ async function logReferralIfNew(student, dateGroups){
     });
     if(checkRes.ok){
       const last = await checkRes.json();
-      if(last.length && Number(last[0].dates_count) === dateGroups.length) return; // نفس الإحالة سبق تسجيلها
+      hadPriorReferral = last.length > 0;
+      if(last.length && Number(last[0].dates_count) === dateGroups.length){
+        return hadPriorReferral; // نفس الإحالة سبق تسجيلها بنفس العدد — لا حاجة لإضافة صف جديد
+      }
     }
     const payload = {
       student_id: student.sid,
@@ -959,6 +970,7 @@ async function logReferralIfNew(student, dateGroups){
       body: JSON.stringify(payload)
     });
   }catch(e){ console.warn("تعذّر تسجيل الإحالة:", e); }
+  return hadPriorReferral;
 }
 
 function showThirdWarningAlert(student, dateGroups){
