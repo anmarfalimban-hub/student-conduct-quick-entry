@@ -213,18 +213,61 @@
   body.locked > header, body.locked > main, body.locked > footer{
     filter:blur(6px); pointer-events:none; user-select:none;
   }
+
+  .idrow{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,.18);
+    font-size:12.5px; color:#eaf3f1;
+  }
+  .idrow b{color:#fff;}
+  .idrow button{
+    background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.3);
+    color:#fff; font-size:11.5px; padding:5px 10px; border-radius:8px; cursor:pointer;
+  }
+
+  .tabs{display:flex; gap:8px; margin-bottom:14px;}
+  .tabbtn{
+    flex:1; padding:11px; border-radius:11px; border:1.6px solid var(--line);
+    background:#fff; color:var(--muted); font-weight:800; font-size:13.5px; cursor:pointer;
+  }
+  .tabbtn.active{background:var(--teal); border-color:var(--teal); color:#fff;}
+
+  .mine-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;}
+  .mine-head h3{margin:0; font-size:15px;}
+  .ghostlink{
+    background:none; border:none; color:var(--teal-dark); font-weight:700; font-size:12.5px; cursor:pointer;
+  }
+  .mine-list{margin-top:12px;}
+  .mine-item{
+    border:1px solid var(--line); border-radius:12px; padding:11px 12px; margin-bottom:9px;
+    background:#fbfdfc;
+  }
+  .mine-item .top-row{display:flex; justify-content:space-between; align-items:flex-start; gap:8px;}
+  .mine-item .st-name{font-weight:800; font-size:14px;}
+  .mine-item .st-class{font-size:11.5px; color:var(--muted); margin-top:2px;}
+  .mine-item .vtext{font-size:13px; margin-top:8px; color:var(--ink);}
+  .mine-item .vmeta{font-size:11px; color:var(--muted); margin-top:6px; display:flex; gap:10px; flex-wrap:wrap;}
 </style>
 </head>
 <body class="locked">
 
 <div id="gate">
-  <div class="box">
+  <div class="box" id="gateStep1">
     <div class="lock">🔒</div>
     <h2>دخول مقيّد</h2>
     <p>هذا التطبيق خاص بمنسوبي المدرسة فقط<br>الرجاء إدخال كلمة المرور</p>
     <input type="password" id="gatePass" inputmode="numeric" maxlength="12" placeholder="••••" autocomplete="off">
     <div class="err" id="gateErr"></div>
     <button class="btn" id="gateBtn">دخول</button>
+  </div>
+  <div class="box" id="gateStep2" style="display:none;">
+    <div class="lock">👤</div>
+    <h2>من أنت؟</h2>
+    <p>اكتب اسمك — سيُستخدم لتسجيل مخالفاتك وعرض سجلّك الخاص فقط</p>
+    <input type="text" id="gateName" list="gateNameList" placeholder="الاسم الكامل" autocomplete="off">
+    <datalist id="gateNameList"></datalist>
+    <div class="err" id="gateNameErr"></div>
+    <button class="btn" id="gateNameBtn">متابعة</button>
   </div>
 </div>
 
@@ -236,9 +279,20 @@
     </div>
     <div class="datebadge" id="dateBadge">—</div>
   </div>
+  <div class="idrow" id="idRow" style="display:none;">
+    <span>مسجّل باسم: <b id="idName">—</b></span>
+    <button id="btnSwitchUser" type="button">تبديل المستخدم</button>
+  </div>
 </header>
 
 <main>
+
+  <div class="tabs">
+    <button class="tabbtn active" id="tabEntry" type="button">تسجيل مخالفة</button>
+    <button class="tabbtn" id="tabMine" type="button">سجل مخالفاتي</button>
+  </div>
+
+  <section id="viewEntry">
 
   <div class="card">
     <div class="steps">
@@ -327,11 +381,6 @@
           </div>
         </div>
       </div>
-      <div class="field">
-        <label class="field-label" style="margin-bottom:4px;">اسم المعلم الراصد</label>
-        <input type="text" id="inpTeacher" list="teacherList" placeholder="اكتب اسمك">
-        <datalist id="teacherList"></datalist>
-      </div>
       <div class="field" style="margin-bottom:0;">
         <label class="field-label" style="margin-bottom:4px;">ملاحظات</label>
         <textarea id="inpNotes" placeholder="أي تفاصيل إضافية عن الموقف..."></textarea>
@@ -347,6 +396,21 @@
     <h3>آخر ما تم تسجيله في هذه الجلسة</h3>
     <div id="recentList"></div>
   </div>
+
+  </section>
+
+  <section id="viewMine" style="display:none;">
+    <div class="card">
+      <div class="mine-head">
+        <h3>سجل مخالفاتي</h3>
+        <button id="btnRefreshMine" type="button" class="ghostlink">↻ تحديث</button>
+      </div>
+      <div class="hint">تُعرض هنا فقط المخالفات المسجّلة باسمك.</div>
+      <div id="mineList" class="mine-list"></div>
+      <div id="mineEmpty" class="empty-note" style="display:none;">لا توجد مخالفات مسجّلة باسمك بعد.</div>
+      <div id="mineLoading" class="hint" style="text-align:center; display:none;">جارٍ التحميل...</div>
+    </div>
+  </section>
 
 </main>
 
@@ -571,17 +635,29 @@ function onViolationChange(){
   updateDots(); updateSaveBtn();
 }
 
-/* ===================== حفظ اسم المعلم محليًا ===================== */
-function loadTeacherName(){
-  const saved = localStorage.getItem("qve_teacher_name");
-  if(saved) $("inpTeacher").value = saved;
+/* ===================== هوية المعلم (تسجيل الدخول) ===================== */
+const TEACHER_KEY = "qve_teacher_name";
+
+function getTeacherName(){
+  return (localStorage.getItem(TEACHER_KEY) || "").trim();
 }
-function saveTeacherName(){
-  const v = $("inpTeacher").value.trim();
-  if(v) localStorage.setItem("qve_teacher_name", v);
+function setTeacherName(name){
+  localStorage.setItem(TEACHER_KEY, name.trim());
+}
+function clearTeacherName(){
+  localStorage.removeItem(TEACHER_KEY);
+}
+function refreshIdBadge(){
+  const name = getTeacherName();
+  if(name){
+    $("idRow").style.display = "flex";
+    $("idName").textContent = name;
+  }else{
+    $("idRow").style.display = "none";
+  }
 }
 
-/* جلب أسماء معلمين سابقين لملء الاقتراحات */
+/* جلب أسماء معلمين سابقين لملء اقتراحات حقل الاسم عند تسجيل الدخول */
 async function loadTeacherSuggestions(){
   try{
     const res = await fetch(
@@ -591,7 +667,7 @@ async function loadTeacherSuggestions(){
     if(!res.ok) return;
     const rows = await res.json();
     const names = [...new Set(rows.map(r=>r.teacher).filter(Boolean))];
-    const dl = $("teacherList");
+    const dl = $("gateNameList");
     dl.innerHTML = "";
     names.forEach(n=>{
       const o = document.createElement("option");
@@ -612,7 +688,7 @@ async function saveViolation(){
 
   const { iso, day } = todayInfo();
   const classLabel = state.student.grade + " - " + state.student.klass;
-  const teacher = $("inpTeacher").value.trim();
+  const teacher = getTeacherName();
 
   const payload = {
     student_name: state.student.name,
@@ -645,7 +721,6 @@ async function saveViolation(){
       const txt = await res.text();
       throw new Error(txt || res.statusText);
     }
-    saveTeacherName();
     toast("تم حفظ المخالفة بنجاح ✓");
     recentEntries.unshift({
       who: state.student.name,
@@ -699,7 +774,7 @@ function resetAfterSave(){
   window.scrollTo({top:0, behavior:"smooth"});
 }
 
-/* ===================== حاجز كلمة المرور ===================== */
+/* ===================== حاجز كلمة المرور + تسجيل الدخول بالاسم ===================== */
 const GATE_HASH = "8e1f192fe25ad49be764c3f55c68beb32f7aa66f85344e026b76cfaaa1d3d88a";
 const GATE_SESSION_KEY = "qve_gate_ok";
 
@@ -715,7 +790,7 @@ async function tryUnlock(){
   const hash = await sha256Hex(val);
   if(hash === GATE_HASH){
     sessionStorage.setItem(GATE_SESSION_KEY, "1");
-    unlockApp();
+    afterPasswordOk();
   }else{
     err.textContent = "كلمة المرور غير صحيحة";
     $("gatePass").value = "";
@@ -723,25 +798,118 @@ async function tryUnlock(){
   }
 }
 
+function afterPasswordOk(){
+  if(getTeacherName()){
+    unlockApp();
+  }else{
+    $("gateStep1").style.display = "none";
+    $("gateStep2").style.display = "block";
+    loadTeacherSuggestions();
+    setTimeout(()=> $("gateName") && $("gateName").focus(), 200);
+  }
+}
+
+function tryConfirmName(){
+  const val = $("gateName").value.trim();
+  const err = $("gateNameErr");
+  if(!val){ err.textContent = "الرجاء كتابة اسمك"; return; }
+  if(val.length < 3){ err.textContent = "اكتب اسمك كاملاً"; return; }
+  setTeacherName(val);
+  unlockApp();
+}
+
 function unlockApp(){
   document.body.classList.remove("locked");
   $("gate").style.display = "none";
+  refreshIdBadge();
+}
+
+function switchUser(){
+  clearTeacherName();
+  document.body.classList.add("locked");
+  $("gate").style.display = "flex";
+  $("gateStep1").style.display = "none";
+  $("gateStep2").style.display = "block";
+  $("gateName").value = "";
+  loadTeacherSuggestions();
+  setTimeout(()=> $("gateName") && $("gateName").focus(), 200);
 }
 
 function initGate(){
-  if(sessionStorage.getItem(GATE_SESSION_KEY) === "1"){
+  const passOk = sessionStorage.getItem(GATE_SESSION_KEY) === "1";
+  if(passOk && getTeacherName()){
     unlockApp();
+  }else if(passOk){
+    afterPasswordOk();
+  }else{
+    setTimeout(()=> $("gatePass") && $("gatePass").focus(), 300);
   }
+
   $("gateBtn").addEventListener("click", tryUnlock);
-  $("gatePass").addEventListener("keydown", e=>{
-    if(e.key === "Enter") tryUnlock();
-  });
-  setTimeout(()=> $("gatePass") && $("gatePass").focus(), 300);
+  $("gatePass").addEventListener("keydown", e=>{ if(e.key === "Enter") tryUnlock(); });
+  $("gateNameBtn").addEventListener("click", tryConfirmName);
+  $("gateName").addEventListener("keydown", e=>{ if(e.key === "Enter") tryConfirmName(); });
+  $("btnSwitchUser").addEventListener("click", switchUser);
+}
+
+/* ===================== سجل مخالفاتي ===================== */
+function switchTab(which){
+  const isEntry = which === "entry";
+  $("tabEntry").classList.toggle("active", isEntry);
+  $("tabMine").classList.toggle("active", !isEntry);
+  $("viewEntry").style.display = isEntry ? "" : "none";
+  $("viewMine").style.display = isEntry ? "none" : "";
+  if(!isEntry) loadMyViolations();
+}
+
+function degreePill(d){
+  d = Number(d) || 0;
+  const label = DEGREE_LABEL[d] || "—";
+  const cls = DEGREE_CLASS[d] || "";
+  return "<span class='degree-pill "+cls+"'>الدرجة "+label+"</span>";
+}
+
+async function loadMyViolations(){
+  const name = getTeacherName();
+  const listEl = $("mineList"), emptyEl = $("mineEmpty"), loadEl = $("mineLoading");
+  listEl.innerHTML = ""; emptyEl.style.display = "none"; loadEl.style.display = "block";
+  try{
+    const url = SUPABASE_URL + "/rest/v1/violations?teacher=eq." + encodeURIComponent(name)
+      + "&select=student_name,class,vdate,vday,violations,degrees,period,action,notes&order=id.desc&limit=300";
+    const res = await fetch(url, {
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY }
+    });
+    if(!res.ok) throw new Error(await res.text());
+    const rows = await res.json();
+    loadEl.style.display = "none";
+    if(!rows.length){ emptyEl.style.display = "block"; return; }
+    listEl.innerHTML = rows.map(r => `
+      <div class="mine-item">
+        <div class="top-row">
+          <div>
+            <div class="st-name">${escapeHtml(r.student_name || "—")}</div>
+            <div class="st-class">${escapeHtml(r.class || "—")}</div>
+          </div>
+          ${degreePill(r.degrees)}
+        </div>
+        <div class="vtext">${escapeHtml(r.violations || "—")}</div>
+        <div class="vmeta">
+          <span>📅 ${escapeHtml(r.vday || "")} ${escapeHtml(r.vdate || "")}</span>
+          ${r.period ? "<span>🕐 " + escapeHtml(r.period) + "</span>" : ""}
+          ${r.action ? "<span>⚙️ " + escapeHtml(r.action) + "</span>" : ""}
+        </div>
+      </div>
+    `).join("");
+  }catch(e){
+    loadEl.style.display = "none";
+    toast("تعذّر تحميل السجل، تحقق من الاتصال", true);
+  }
 }
 
 /* ===================== بدء التشغيل ===================== */
 function boot(){
   initGate();
+  refreshIdBadge();
   const {iso, day} = todayInfo();
   const dNow = new Date();
   const dd = String(dNow.getDate()).padStart(2,"0");
@@ -750,14 +918,15 @@ function boot(){
 
   initGrades();
   initViolations();
-  loadTeacherName();
-  loadTeacherSuggestions();
 
   $("selGrade").addEventListener("change", onGradeChange);
   $("selClass").addEventListener("change", onClassChange);
   $("selStudent").addEventListener("change", onStudentChange);
   $("selViolation").addEventListener("change", onViolationChange);
   $("btnSave").addEventListener("click", saveViolation);
+  $("tabEntry").addEventListener("click", ()=>switchTab("entry"));
+  $("tabMine").addEventListener("click", ()=>switchTab("mine"));
+  $("btnRefreshMine").addEventListener("click", loadMyViolations);
 
   updateDots();
   updateSaveBtn();
