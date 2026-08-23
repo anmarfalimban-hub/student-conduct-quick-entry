@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@700&display=swap" rel="stylesheet">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0f3d3e">
@@ -263,40 +266,133 @@
   .warn-box p{font-size:13px; color:var(--ink); line-height:1.9; margin:0 0 16px;}
   .warn-box .btn{margin-bottom:8px;}
 
-  /* ===== نموذج التحويل القابل للطباعة ===== */
+  /* ===== نموذج التحويل القابل للطباعة (التصميم الرسمي المعتمد) ===== */
   .report-overlay{
-    position:fixed; inset:0; z-index:210; background:#e9edeb; overflow-y:auto;
+    position:fixed; inset:0; z-index:210; background:#dfe4e0; overflow-y:auto;
   }
   .report-toolbar{
     position:sticky; top:0; z-index:5; display:flex; gap:10px; justify-content:center;
-    background:var(--teal-dark); padding:10px 14px; box-shadow:0 3px 10px rgba(0,0,0,.15);
+    background:var(--teal-dark); padding:12px 14px; box-shadow:0 3px 12px rgba(0,0,0,.2);
   }
-  .report-toolbar .btn{width:auto; padding:11px 18px; font-size:13.5px;}
+  .report-toolbar .btn{width:auto; padding:11px 20px; font-size:13.5px; background:#a9822f;}
+  .report-toolbar .btn.ghost{background:transparent; color:#fff; border:1.4px solid rgba(255,255,255,.4);}
+
   .report-sheet{
-    max-width:640px; margin:18px auto; background:#fff; padding:28px 26px 34px;
-    border-radius:10px; box-shadow:var(--shadow); color:#111;
+    --gold:#a9822f; --gold-light:#e7d9b3; --r-line:#e2e3d9; --r-muted:#6c7a76;
+    --d1:#2b6e63; --d1bg:#e7f0ee; --d2:#6b7a1f; --d2bg:#eef3d8; --d3:#a3611b; --d3bg:#fbe9d2;
+    --d4:#a13a34; --d4bg:#f8dede; --d5:#7a3487; --d5bg:#efe0f3;
+    max-width:640px; margin:20px auto; background:#fbfaf5; color:#1c2b28;
+    position:relative; overflow:hidden; border-radius:6px;
+    box-shadow:0 2px 4px rgba(10,40,36,.08), 0 24px 48px -20px rgba(10,40,36,.35);
   }
-  .report-head{text-align:center; border-bottom:2px solid var(--teal); padding-bottom:14px; margin-bottom:18px;}
-  .report-title{font-size:18px; font-weight:800; color:var(--teal-dark);}
-  .report-sub{font-size:12px; color:var(--muted); margin-top:4px;}
-  table.report-info{width:100%; border-collapse:collapse; margin-bottom:16px; font-size:13px;}
-  table.report-info td{border:1px solid var(--line); padding:8px 10px;}
-  table.report-info td:nth-child(1), table.report-info td:nth-child(3){
-    background:#f2f8f6; font-weight:700; width:20%;
+  .report-sheet::before{
+    content:""; position:absolute; inset:0; pointer-events:none; opacity:.5;
+    background-image:radial-gradient(circle, rgba(10,74,68,.06) 1px, transparent 1px);
+    background-size:16px 16px;
   }
-  .report-note{font-size:13px; margin-bottom:10px; color:#333;}
-  table.report-table{width:100%; border-collapse:collapse; font-size:12px; margin-bottom:22px;}
-  table.report-table th, table.report-table td{border:1px solid var(--line); padding:7px 6px; text-align:center;}
-  table.report-table th{background:var(--teal); color:#fff; font-size:11.5px;}
-  table.report-table tbody tr:nth-child(even){background:#f7faf9;}
-  .report-ack{
-    background:#fff7ea; border:1px solid #f1dcb0; border-radius:8px; padding:12px 14px;
-    font-size:13.5px; font-weight:700; line-height:1.9; margin-bottom:22px; color:#7a5410;
+  .r-inner{position:relative; padding:0 0 30px;}
+  .r-letterhead{
+    background:linear-gradient(135deg,var(--teal-dark) 0%, var(--teal) 75%);
+    padding:22px 24px 18px; position:relative; overflow:hidden;
   }
-  .report-sign{display:flex; gap:14px; flex-wrap:wrap;}
-  .sign-block{flex:1; min-width:140px; font-size:12.5px;}
-  .sign-block span{display:block; margin-bottom:20px; color:var(--muted); font-weight:700;}
-  .sign-line{border-bottom:1.4px solid #999; height:1px;}
+  .r-letterhead::after{
+    content:""; position:absolute; left:-40px; top:-40px; width:160px; height:160px;
+    background-image:radial-gradient(circle, rgba(255,255,255,.14) 2px, transparent 2px);
+    background-size:14px 14px; border-radius:50%;
+  }
+  .r-top{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; position:relative; z-index:1;}
+  .r-seal{
+    width:48px; height:48px; border-radius:50%; flex:none;
+    background:radial-gradient(circle at 35% 30%, var(--gold-light), var(--gold) 70%);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 4px 10px rgba(0,0,0,.25), inset 0 0 0 3px rgba(255,255,255,.35);
+  }
+  .r-titles{text-align:center; flex:1;}
+  .r-titles .r-doctitle{font-family:"Amiri",serif; font-weight:700; font-size:19px; color:#fff; line-height:1.4;}
+  .r-titles .r-docsub{font-size:11px; color:rgba(255,255,255,.78); margin-top:4px; font-weight:500;}
+  .r-refbox{
+    flex:none; text-align:center; background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.35);
+    border-radius:8px; padding:6px 10px; min-width:88px;
+  }
+  .r-refbox .rb-label{font-size:8.5px; color:rgba(255,255,255,.75); font-weight:700;}
+  .r-refbox .rb-value{font-size:11px; color:#fff; font-weight:800; margin-top:2px; direction:ltr;}
+  .r-lhbottom{
+    margin-top:14px; display:flex; justify-content:space-between; align-items:center;
+    border-top:1px solid rgba(255,255,255,.22); padding-top:9px; position:relative; z-index:1;
+  }
+  .r-statuschip{
+    background:var(--red); color:#fff; font-size:10.5px; font-weight:800;
+    padding:5px 13px; border-radius:99px;
+  }
+  .r-lhdate{font-size:10.5px; color:rgba(255,255,255,.8); font-weight:600;}
+
+  .r-content{padding:22px 24px 0;}
+  .r-sectlabel{
+    font-size:10.5px; font-weight:800; color:var(--gold); letter-spacing:.5px;
+    display:flex; align-items:center; gap:8px; margin-bottom:11px;
+  }
+  .r-sectlabel::after{content:""; flex:1; height:1px; background:var(--r-line);}
+
+  .r-infocard{
+    display:grid; grid-template-columns:1fr 1fr; border:1px solid var(--r-line); border-radius:10px;
+    overflow:hidden; margin-bottom:22px; background:#fff;
+  }
+  .r-cell{padding:12px 15px; border-bottom:1px solid var(--r-line);}
+  .r-cell:nth-child(odd){border-left:1px solid var(--r-line);}
+  .r-cell:nth-last-child(-n+2){border-bottom:none;}
+  .r-cell .ric-label{font-size:9.5px; color:var(--r-muted); font-weight:700; margin-bottom:3px;}
+  .r-cell .ric-value{font-size:13.5px; font-weight:800; color:#1c2b28;}
+
+  .r-leadnote{font-size:12px; color:#3a4746; margin-bottom:12px; line-height:1.8;}
+
+  table.r-vtable{width:100%; border-collapse:separate; border-spacing:0 7px; margin-bottom:6px;}
+  table.r-vtable thead th{font-size:9.5px; color:var(--r-muted); font-weight:800; text-align:center; padding-bottom:2px;}
+  table.r-vtable tbody tr{background:#fff;}
+  table.r-vtable tbody td{
+    padding:9px 6px; text-align:center; font-size:11px; border-top:1px solid var(--r-line); border-bottom:1px solid var(--r-line);
+  }
+  table.r-vtable tbody td:first-child{border-right:1px solid var(--r-line); border-radius:8px 0 0 8px; font-weight:800; color:var(--gold);}
+  table.r-vtable tbody td:last-child{border-left:1px solid var(--r-line); border-radius:0 8px 8px 0;}
+  table.r-vtable tbody td.r-vdate{color:var(--r-muted); font-size:10px; white-space:nowrap;}
+  table.r-vtable tbody td.r-vtext{text-align:right; font-weight:700;}
+  .r-degpill{display:inline-block; padding:3px 9px; border-radius:99px; font-size:10px; font-weight:800;}
+
+  .r-ack{
+    position:relative; margin:22px 0 20px; padding:16px 20px 16px 18px;
+    background:#fbf1e8; border:1px solid var(--gold-light); border-radius:10px;
+    border-inline-start:5px solid var(--red);
+  }
+  .r-ack .r-acktag{
+    position:absolute; top:-10px; left:14px; background:var(--red); color:#fff;
+    font-size:9.5px; font-weight:800; padding:4px 11px; border-radius:99px;
+    box-shadow:0 3px 8px rgba(161,58,52,.35);
+  }
+  .r-ack p{margin:0; font-size:13px; font-weight:700; line-height:2; color:#5a3a1f;}
+
+  .r-signgrid{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:4px;}
+  .r-signcard{border:1px solid var(--r-line); border-radius:10px; padding:14px 16px; background:#fff;}
+  .r-signcard .rsc-title{font-size:11px; font-weight:800; color:var(--teal-dark); margin-bottom:12px;}
+  .r-signrow{display:flex; align-items:flex-end; gap:8px; margin-bottom:14px;}
+  .r-signrow:last-child{margin-bottom:0;}
+  .r-signrow .rsr-label{font-size:10px; color:var(--r-muted); font-weight:700; white-space:nowrap;}
+  .r-signrow .rsr-line{flex:1; border-bottom:1.3px dotted #a9b3ae; height:1px; margin-bottom:2px;}
+
+  .r-footer{
+    margin:26px 24px 0; padding-top:12px; border-top:1px solid var(--r-line);
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;
+  }
+  .r-footer .rf-text{font-size:9px; color:var(--r-muted);}
+  .r-footer .rf-logo{font-size:9.5px; font-weight:800; color:var(--teal);}
+
+  @media (max-width:480px){
+    .r-content{padding:18px 16px 0;}
+    .r-letterhead{padding:18px 16px 14px;}
+    .r-infocard{grid-template-columns:1fr;}
+    .r-cell:nth-child(odd){border-left:none;}
+    .r-cell:nth-last-child(-n+2){border-bottom:1px solid var(--r-line);}
+    .r-cell:last-child{border-bottom:none;}
+    .r-signgrid{grid-template-columns:1fr;}
+  }
 
   @media print{
     body *{visibility:hidden;}
@@ -853,18 +949,40 @@ function showThirdWarningAlert(student, dateGroups){
   });
 }
 
+function refNumber(student){
+  const d = new Date();
+  const ymd = String(d.getFullYear()).slice(2) + String(d.getMonth()+1).padStart(2,"0") + String(d.getDate()).padStart(2,"0");
+  const tail = String(student.sid||"").slice(-3);
+  return "REF-" + ymd + "-" + tail;
+}
+function degPillStyle(d){
+  const map = {1:["var(--d1bg)","var(--d1)"],2:["var(--d2bg)","var(--d2)"],3:["var(--d3bg)","var(--d3)"],4:["var(--d4bg)","var(--d4)"],5:["var(--d5bg)","var(--d5)"]};
+  const c = map[d] || ["#eee","#555"];
+  return `background:${c[0]};color:${c[1]};`;
+}
+
 function openReferralReport(student, dateGroups){
   const { day, iso } = todayInfo();
-  const rowsHtml = dateGroups.map((g,i)=> `
+  const dd = iso.split("-").reverse().join("/");
+  const rowsHtml = dateGroups.map((g,i)=> {
+    const vdd = (g.vdate||"").split("-").reverse().join("/");
+    const degBadges = g.degrees.map(d=>{
+      const n = Number(d);
+      return `<span class="r-degpill" style="${degPillStyle(n)}">${DEGREE_LABEL[n]||d}</span>`;
+    }).join(" ");
+    return `
     <tr>
       <td>${i+1}</td>
-      <td>${escapeHtml(g.vday||"")} ${escapeHtml(g.vdate||"")}</td>
-      <td>${escapeHtml(g.violations.join("، "))}</td>
-      <td>${g.degrees.map(d=>"الدرجة "+(DEGREE_LABEL[Number(d)]||d)).join("، ")}</td>
+      <td class="r-vdate">${escapeHtml(g.vday||"")}<br>${escapeHtml(vdd)}</td>
+      <td class="r-vtext">${escapeHtml(g.violations.join("، "))}</td>
+      <td>${degBadges}</td>
       <td>${escapeHtml(g.actions.join("، ") || "—")}</td>
       <td>${escapeHtml([...new Set(g.teachers)].join("، ") || "—")}</td>
-    </tr>
-  `).join("");
+    </tr>`;
+  }).join("");
+
+  const count = dateGroups.length;
+  const statusLabel = count === 3 ? "⚠️ الإنذار الثالث" : "⚠️ مخالفات متكررة (" + count + ")";
 
   const overlay = document.createElement("div");
   overlay.className = "report-overlay";
@@ -875,33 +993,78 @@ function openReferralReport(student, dateGroups){
       <button class="btn ghost" id="btnCloseReport">إغلاق</button>
     </div>
     <div class="report-sheet">
-      <div class="report-head">
-        <div class="report-title">نموذج إحالة طالب إلى وكيل شؤون الطلاب</div>
-        <div class="report-sub">الشيخ عبدالله خياط المتوسطة — مكة المكرمة</div>
-        <div class="report-sub">تاريخ الإصدار: ${escapeHtml(day)} ${escapeHtml(iso)}</div>
-      </div>
-      <table class="report-info">
-        <tr><td>اسم الطالب</td><td><b>${escapeHtml(student.name)}</b></td>
-            <td>رقم الطالب</td><td>${escapeHtml(student.sid)}</td></tr>
-        <tr><td>الصف</td><td>${escapeHtml(student.grade)}</td>
-            <td>الفصل</td><td>${escapeHtml(student.klass)}</td></tr>
-      </table>
-      <div class="report-note">سجّل الطالب مخالفات سلوكية في ${dateGroups.length} تواريخ مختلفة، وفيما يلي تفصيلها:</div>
-      <table class="report-table">
-        <thead><tr><th>م</th><th>التاريخ</th><th>المخالفة</th><th>الدرجة</th><th>الإجراء المتخذ سابقًا</th><th>المعلم الراصد</th></tr></thead>
-        <tbody>${rowsHtml}</tbody>
-      </table>
-      <div class="report-ack">
-        تم العلم بالإنذار الثالث، وأتحمل في حال تكرار المخالفة الإجراءات السلوكية المتخذة.
-      </div>
-      <div class="report-sign">
-        <div class="sign-block"><span>اسم الطالب:</span><div class="sign-line"></div></div>
-        <div class="sign-block"><span>التوقيع:</span><div class="sign-line"></div></div>
-        <div class="sign-block"><span>التاريخ:</span><div class="sign-line"></div></div>
-      </div>
-      <div class="report-sign" style="margin-top:18px;">
-        <div class="sign-block"><span>وكيل شؤون الطلاب:</span><div class="sign-line"></div></div>
-        <div class="sign-block"><span>التوقيع:</span><div class="sign-line"></div></div>
+      <div class="r-inner">
+
+        <div class="r-letterhead">
+          <div class="r-top">
+            <div class="r-seal">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="4" y="2.5" width="14" height="17" rx="2" stroke="#fff" stroke-width="1.6"/>
+                <line x1="7" y1="7" x2="15" y2="7" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/>
+                <line x1="7" y1="10.3" x2="15" y2="10.3" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/>
+                <line x1="7" y1="13.6" x2="11.5" y2="13.6" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/>
+                <circle cx="17.5" cy="17.5" r="5.4" fill="#a13a34" stroke="#fff" stroke-width="1.3"/>
+                <line x1="17.5" y1="14.7" x2="17.5" y2="18" stroke="#fff" stroke-width="1.3" stroke-linecap="round"/>
+                <circle cx="17.5" cy="20.2" r="0.9" fill="#fff"/>
+              </svg>
+            </div>
+            <div class="r-titles">
+              <div class="r-doctitle">نموذج إحالة طالب</div>
+              <div class="r-docsub">إلى وكيل شؤون الطلاب — الشيخ عبدالله خياط المتوسطة</div>
+            </div>
+            <div class="r-refbox">
+              <div class="rb-label">رقم الإحالة</div>
+              <div class="rb-value">${refNumber(student)}</div>
+            </div>
+          </div>
+          <div class="r-lhbottom">
+            <span class="r-statuschip">${statusLabel}</span>
+            <span class="r-lhdate">تاريخ الإصدار: ${escapeHtml(day)} ${escapeHtml(dd)}</span>
+          </div>
+        </div>
+
+        <div class="r-content">
+          <div class="r-sectlabel">بيانات الطالب</div>
+          <div class="r-infocard">
+            <div class="r-cell"><div class="ric-label">اسم الطالب</div><div class="ric-value">${escapeHtml(student.name)}</div></div>
+            <div class="r-cell"><div class="ric-label">الصف</div><div class="ric-value">${escapeHtml(student.grade)}</div></div>
+            <div class="r-cell"><div class="ric-label">الفصل</div><div class="ric-value">فصل ${escapeHtml(student.klass)}</div></div>
+            <div class="r-cell"><div class="ric-label">عدد التواريخ المخالِفة</div><div class="ric-value">${count} تواريخ</div></div>
+          </div>
+
+          <div class="r-sectlabel">تفصيل المخالفات</div>
+          <div class="r-leadnote">سجّل الطالب <b>${escapeHtml(student.name)}</b> مخالفات سلوكية في ${count} تواريخ مختلفة، وفيما يلي تفصيلها:</div>
+          <table class="r-vtable">
+            <thead><tr><th>م</th><th>التاريخ</th><th>المخالفة</th><th>الدرجة</th><th>الإجراء السابق</th><th>المعلم الراصد</th></tr></thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+
+          <div class="r-ack">
+            <span class="r-acktag">إقرار الطالب</span>
+            <p>تم العلم بالإنذار الثالث، وأتحمل في حال تكرار المخالفة الإجراءات السلوكية المتخذة.</p>
+          </div>
+
+          <div class="r-signgrid">
+            <div class="r-signcard">
+              <div class="rsc-title">👤 إقرار الطالب</div>
+              <div class="r-signrow"><span class="rsr-label">الاسم</span><span class="rsr-line"></span></div>
+              <div class="r-signrow"><span class="rsr-label">التوقيع</span><span class="rsr-line"></span></div>
+              <div class="r-signrow"><span class="rsr-label">التاريخ</span><span class="rsr-line"></span></div>
+            </div>
+            <div class="r-signcard">
+              <div class="rsc-title">🏫 اعتماد الإدارة</div>
+              <div class="r-signrow"><span class="rsr-label">وكيل شؤون الطلاب</span><span class="rsr-line"></span></div>
+              <div class="r-signrow"><span class="rsr-label">التوقيع</span><span class="rsr-line"></span></div>
+              <div class="r-signrow"><span class="rsr-label">التاريخ</span><span class="rsr-line"></span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="r-footer">
+          <div class="rf-logo">🔔 نظام رصد المخالفات السلوكية</div>
+          <div class="rf-text">وثيقة صادرة آليًا — الشيخ عبدالله خياط المتوسطة، مكة المكرمة</div>
+        </div>
+
       </div>
     </div>
   `;
