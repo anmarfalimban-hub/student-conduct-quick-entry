@@ -922,8 +922,43 @@ async function checkThirdWarning(student){
 
     if(dateGroups.length < 3) return;
 
+    await logReferralIfNew(student, dateGroups);
     showThirdWarningAlert(student, dateGroups);
   }catch(e){ /* لا نعطّل حفظ المخالفة إن فشل هذا الفحص */ console.warn(e); }
+}
+
+/* تسجيل الإحالة في قاعدة البيانات (تُقرأ من تبويب "الإحالات" في النظام الرئيسي)
+   لا نكرر نفس الإحالة إذا كان عدد التواريخ لم يتغيّر منذ آخر إحالة مسجَّلة لهذا الطالب */
+async function logReferralIfNew(student, dateGroups){
+  try{
+    const checkUrl = SUPABASE_URL + "/rest/v1/referrals?student_id=eq." + encodeURIComponent(student.sid)
+      + "&select=dates_count&order=id.desc&limit=1";
+    const checkRes = await fetch(checkUrl, {
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY }
+    });
+    if(checkRes.ok){
+      const last = await checkRes.json();
+      if(last.length && Number(last[0].dates_count) === dateGroups.length) return; // نفس الإحالة سبق تسجيلها
+    }
+    const payload = {
+      student_id: student.sid,
+      student_name: student.name,
+      class: student.grade + " - " + student.klass,
+      dates_count: dateGroups.length,
+      ref_number: refNumber(student),
+      violations_summary: dateGroups.map(g=>g.violations.join("، ")).join(" | "),
+      degrees_summary: dateGroups.map(g=>g.degrees.join(",")).join("|"),
+      status: "جديد"
+    };
+    await fetch(SUPABASE_URL + "/rest/v1/referrals", {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY,
+        "Content-Type": "application/json", "Prefer": "return=minimal"
+      },
+      body: JSON.stringify(payload)
+    });
+  }catch(e){ console.warn("تعذّر تسجيل الإحالة:", e); }
 }
 
 function showThirdWarningAlert(student, dateGroups){
