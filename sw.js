@@ -1,4 +1,4 @@
-const CACHE = "qve-shell-v1";
+const CACHE = "qve-shell-v2";
 const SHELL = ["./index.html", "./manifest.json"];
 
 self.addEventListener("install", e => {
@@ -21,5 +21,34 @@ self.addEventListener("fetch", e => {
   if (url.hostname.includes("supabase.co")) return;
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request))
+  );
+});
+
+/* ===================== إشعارات بلاغ الهروب (Web Push) ===================== */
+self.addEventListener("push", e => {
+  let payload = {};
+  try { payload = e.data ? e.data.json() : {}; } catch (err) { payload = {}; }
+  const title = payload.title || "🚨 بلاغ هروب من الحصة";
+  const options = {
+    body: payload.body || "",
+    icon: "./icon-192.png",
+    badge: "./icon-192.png",
+    tag: payload.tag || "escape-alert",
+    dir: "rtl",
+    lang: "ar",
+    requireInteraction: true,
+    vibrate: [300, 150, 300, 150, 300],
+    data: payload.data || {}
+  };
+  e.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", e => {
+  e.notification.close();
+  e.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(list => {
+      for (const c of list) { if ("focus" in c) return c.focus(); }
+      if (self.clients.openWindow) return self.clients.openWindow("./");
+    })
   );
 });
