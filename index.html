@@ -408,10 +408,29 @@
   }
 
   @media print{
+    @page{ size: A4; margin: 8mm; }
     body *{visibility:hidden;}
     .report-sheet, .report-sheet *{visibility:visible;}
-    .report-sheet{position:absolute; top:0; right:0; left:0; margin:0; box-shadow:none; max-width:100%;}
+    .report-sheet{
+      position:absolute; top:0; right:0; left:0; margin:0; box-shadow:none; max-width:100%;
+      font-size:92%;
+    }
     .no-print{display:none !important;}
+    .r-letterhead{padding:14px 18px 12px;}
+    .r-content{padding:14px 18px 0;}
+    .r-infocard{margin-bottom:14px;}
+    .r-cell{padding:8px 12px;}
+    .r-sectlabel{margin-bottom:7px;}
+    .r-leadnote{margin-bottom:8px;}
+    table.r-vtable{border-spacing:0 4px;}
+    table.r-vtable tbody td{padding:6px 6px;}
+    .r-ack{margin:12px 0 12px; padding:10px 16px 10px 14px;}
+    .r-ack p{line-height:1.6;}
+    .r-signgrid{margin-top:2px; gap:10px;}
+    .r-signcard{padding:10px 14px;}
+    .r-signrow{margin-bottom:9px;}
+    .r-footer{margin:14px 24px 0; padding-top:8px;}
+    .r-letterhead, .r-infocard, .r-ack, .r-signgrid, .r-footer{page-break-inside:avoid;}
   }
 </style>
 </head>
