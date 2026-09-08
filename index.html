@@ -1035,6 +1035,7 @@ async function saveViolation(){
 async function checkThirdWarning(student){
   try{
     const url = SUPABASE_URL + "/rest/v1/violations?student_id=eq." + encodeURIComponent(student.sid)
+      + "&or=(is_prior_year.eq.false,is_prior_year.is.null)"
       + "&select=vdate,vday,violations,degrees,action,teacher,period&order=vdate.asc";
     const res = await fetch(url, {
       headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY }
