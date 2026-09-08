@@ -634,34 +634,6 @@ const VIOLATIONS = [
   {d:3, t:"التوقيع عن ولي الأمر دون علمه"},
   {d:3, t:"إتلاف الكتب الدراسية"},
 
-  {d:4, t:"تعمد إصابة أحد الطلبة (جرح/نزيف/كسر)"},
-  {d:4, t:"سرقة ممتلكات الطلبة أو المدرسة"},
-  {d:4, t:"التصوير أو التسجيل الصوتي للطلبة دون إذن"},
-  {d:4, t:"إلحاق ضرر متعمد بتجهيزات المدرسة الأساسية"},
-  {d:4, t:"التدخين داخل المدرسة"},
-  {d:4, t:"الهروب من المدرسة"},
-  {d:4, t:"إحضار أو استخدام مواد أو ألعاب خطرة"},
-  {d:4, t:"عرض أو توزيع مواد إعلامية ممنوعة"},
-  {d:4, t:"تهديد المعلمين أو الإداريين"},
-  {d:4, t:"التلفظ بألفاظ غير لائقة تجاه المعلمين"},
-  {d:4, t:"السخرية من المعلمين قولاً أو فعلاً"},
-  {d:4, t:"تصوير أو تسجيل المعلمين دون إذن"},
-
-  {d:5, t:"الإساءة إلى شعائر الإسلام"},
-  {d:5, t:"الإساءة للدولة أو رموزها"},
-  {d:5, t:"بث أو ترويج أفكار متطرفة أو تكفيرية"},
-  {d:5, t:"الإساءة للأديان السماوية أو إثارة العنصرية والطائفية"},
-  {d:5, t:"التزوير أو استخدام أختام رسمية بطريقة غير مشروعة"},
-  {d:5, t:"التحرش الجنسي"},
-  {d:5, t:"إشعال النار داخل المدرسة"},
-  {d:5, t:"حيازة أو استخدام سلاح ناري أو ما في حكمه"},
-  {d:5, t:"حيازة أو تعاطي أو ترويج المخدرات أو المسكرات"},
-  {d:5, t:"الجرائم المعلوماتية بكافة أنواعها"},
-  {d:5, t:"ابتزاز الطلبة"},
-  {d:5, t:"التنمر بجميع أنواعه وأشكاله"},
-  {d:5, t:"إلحاق الضرر بممتلكات المعلمين أو سرقتها"},
-  {d:5, t:"الاعتداء بالضرب على المعلمين أو الإداريين"},
-  {d:5, t:"ابتزاز المعلمين أو الإداريين"},
 ];
 const DEGREE_LABEL = {1:"الأولى",2:"الثانية",3:"الثالثة",4:"الرابعة",5:"الخامسة"};
 const DEGREE_CLASS = {1:"d1",2:"d2",3:"d3",4:"d4",5:"d5"};
@@ -1020,8 +992,9 @@ async function saveViolation(){
     recentEntries = recentEntries.slice(0,5);
     renderRecent();
     const savedStudent = state.student;
+    const savedViolationText = state.violation.text;
     resetAfterSave();
-    checkThirdWarning(savedStudent);
+    checkThirdWarning(savedStudent, savedViolationText);
   }catch(err){
     console.error(err);
     toast("تعذّر الحفظ، تحقق من الاتصال بالإنترنت وحاول مجددًا", true);
@@ -1032,9 +1005,11 @@ async function saveViolation(){
 }
 
 /* ===================== تنبيه تكرار المخالفات (الإنذار الثالث فأكثر) ===================== */
-async function checkThirdWarning(student){
+async function checkThirdWarning(student, violationText){
   try{
+    // يُحوَّل الطالب فقط عند وصوله لـ 3 مخالفات (فأكثر) من نفس نوع المخالفة تحديدًا — وليس أي مخالفات مختلفة
     const url = SUPABASE_URL + "/rest/v1/violations?student_id=eq." + encodeURIComponent(student.sid)
+      + "&violations=eq." + encodeURIComponent(violationText)
       + "&or=(is_prior_year.eq.false,is_prior_year.is.null)"
       + "&select=vdate,vday,violations,degrees,action,teacher,period&order=vdate.asc";
     const res = await fetch(url, {
@@ -1043,7 +1018,7 @@ async function checkThirdWarning(student){
     if(!res.ok) return;
     const rows = await res.json();
 
-    // تجميع كل مخالفات كل تاريخ في صف واحد (قد يسجَّل أكثر من مخالفة في نفس اليوم)
+    // تجميع مخالفات هذا النوع تحديدًا حسب التاريخ (نادرًا ما تتكرر نفس المخالفة في نفس اليوم)
     const byDate = new Map();
     rows.forEach(r=>{
       if(!byDate.has(r.vdate)){
@@ -1058,15 +1033,15 @@ async function checkThirdWarning(student){
     });
     const dateGroups = [...byDate.values()].sort((a,b)=> a.vdate.localeCompare(b.vdate));
 
-    if(dateGroups.length < 3) return;
+    if(rows.length < 3) return;
 
-    const alreadyReferred = await logReferralIfNew(student, dateGroups);
+    const alreadyReferred = await logReferralIfNew(student, dateGroups, violationText);
     if(alreadyReferred){
       // الطالب مُحوَّل مسبقًا لوكيل شؤون الطلاب — يُفتح نموذج التحويل مباشرة دون نافذة تنبيه وسيطة
-      openReferralReport(student, dateGroups);
+      openReferralReport(student, dateGroups, violationText);
     }else{
       // أول مرة يصل فيها الطالب لهذا الحد — تُعرض نافذة التنبيه أولًا ليختار المعلم
-      showThirdWarningAlert(student, dateGroups);
+      showThirdWarningAlert(student, dateGroups, violationText);
     }
   }catch(e){ /* لا نعطّل حفظ المخالفة إن فشل هذا الفحص */ console.warn(e); }
 }
@@ -1074,7 +1049,7 @@ async function checkThirdWarning(student){
 /* تسجيل الإحالة في قاعدة البيانات (تُقرأ من تبويب "الإحالات" في النظام الرئيسي)
    لا نكرر نفس الإحالة إذا كان عدد التواريخ لم يتغيّر منذ آخر إحالة مسجَّلة لهذا الطالب
    ترجع true إذا كان للطالب إحالة سابقة بالفعل (بغضّ النظر عن تسجيل صف جديد الآن أو لا) */
-async function logReferralIfNew(student, dateGroups){
+async function logReferralIfNew(student, dateGroups, violationText){
   let hadPriorReferral = false;
   try{
     const checkUrl = SUPABASE_URL + "/rest/v1/referrals?student_id=eq." + encodeURIComponent(student.sid)
@@ -1095,7 +1070,7 @@ async function logReferralIfNew(student, dateGroups){
       class: student.grade + " - " + student.klass,
       dates_count: dateGroups.length,
       ref_number: refNumber(student),
-      violations_summary: dateGroups.map(g=>g.violations.join("، ")).join(" | "),
+      violations_summary: violationText + " (×" + dateGroups.length + ")",
       degrees_summary: dateGroups.map(g=>g.degrees.join(",")).join("|"),
       status: "جديد"
     };
@@ -1111,9 +1086,9 @@ async function logReferralIfNew(student, dateGroups){
   return hadPriorReferral;
 }
 
-function showThirdWarningAlert(student, dateGroups){
+function showThirdWarningAlert(student, dateGroups, violationText){
   const count = dateGroups.length;
-  const title = count === 3 ? "⚠️ الإنذار الثالث" : "⚠️ تنبيه: مخالفات متكررة (" + count + " تواريخ)";
+  const title = count === 3 ? "⚠️ الإنذار الثالث" : "⚠️ تنبيه: تكرار نفس المخالفة (" + count + " مرات)";
   const box = document.createElement("div");
   box.className = "warn-overlay";
   box.innerHTML = `
@@ -1121,7 +1096,7 @@ function showThirdWarningAlert(student, dateGroups){
       <div class="warn-ic">⚠️</div>
       <h2>${title}</h2>
       <p>الطالب <b>${escapeHtml(student.name)}</b> (${escapeHtml(student.grade)} - فصل ${escapeHtml(student.klass)})
-      لديه مخالفات سلوكية في <b>${count}</b> تواريخ مختلفة.<br>يلزم تحويله إلى وكيل شؤون الطلاب.</p>
+      كرّر نفس المخالفة "<b>${escapeHtml(violationText)}</b>" في <b>${count}</b> تواريخ مختلفة.<br>يلزم تحويله إلى وكيل شؤون الطلاب.</p>
       <button class="btn" id="btnOpenReferral">فتح نموذج التحويل</button>
       <button class="btn ghost" id="btnDismissWarn">لاحقًا</button>
     </div>
@@ -1130,7 +1105,7 @@ function showThirdWarningAlert(student, dateGroups){
   box.querySelector("#btnDismissWarn").addEventListener("click", ()=> box.remove());
   box.querySelector("#btnOpenReferral").addEventListener("click", ()=>{
     box.remove();
-    openReferralReport(student, dateGroups);
+    openReferralReport(student, dateGroups, violationText);
   });
 }
 
@@ -1146,7 +1121,7 @@ function degPillStyle(d){
   return `background:${c[0]};color:${c[1]};`;
 }
 
-function openReferralReport(student, dateGroups){
+function openReferralReport(student, dateGroups, violationText){
   const { day, iso } = todayInfo();
   const dd = iso.split("-").reverse().join("/");
   const rowsHtml = dateGroups.map((g,i)=> {
@@ -1167,7 +1142,7 @@ function openReferralReport(student, dateGroups){
   }).join("");
 
   const count = dateGroups.length;
-  const statusLabel = count === 3 ? "⚠️ الإنذار الثالث" : "⚠️ مخالفات متكررة (" + count + ")";
+  const statusLabel = count === 3 ? "⚠️ الإنذار الثالث" : "⚠️ تكرار نفس المخالفة (" + count + ")";
 
   const overlay = document.createElement("div");
   overlay.className = "report-overlay";
@@ -1214,11 +1189,12 @@ function openReferralReport(student, dateGroups){
             <div class="r-cell"><div class="ric-label">اسم الطالب</div><div class="ric-value">${escapeHtml(student.name)}</div></div>
             <div class="r-cell"><div class="ric-label">الصف</div><div class="ric-value">${escapeHtml(student.grade)}</div></div>
             <div class="r-cell"><div class="ric-label">الفصل</div><div class="ric-value">فصل ${escapeHtml(student.klass)}</div></div>
-            <div class="r-cell"><div class="ric-label">عدد التواريخ المخالِفة</div><div class="ric-value">${count} تواريخ</div></div>
+            <div class="r-cell"><div class="ric-label">المخالفة المتكررة</div><div class="ric-value">${escapeHtml(violationText || "—")}</div></div>
+            <div class="r-cell"><div class="ric-label">عدد مرات التكرار</div><div class="ric-value">${count} تواريخ</div></div>
           </div>
 
           <div class="r-sectlabel">تفصيل المخالفات</div>
-          <div class="r-leadnote">سجّل الطالب <b>${escapeHtml(student.name)}</b> مخالفات سلوكية في ${count} تواريخ مختلفة، وفيما يلي تفصيلها:</div>
+          <div class="r-leadnote">كرّر الطالب <b>${escapeHtml(student.name)}</b> مخالفة "<b>${escapeHtml(violationText || "")}</b>" في ${count} تواريخ مختلفة، وفيما يلي تفصيلها:</div>
           <table class="r-vtable">
             <thead><tr><th>م</th><th>التاريخ</th><th>المخالفة</th><th>الدرجة</th><th>الإجراء السابق</th><th>المعلم الراصد</th></tr></thead>
             <tbody>${rowsHtml}</tbody>
