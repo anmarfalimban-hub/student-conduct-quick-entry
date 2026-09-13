@@ -1,5 +1,5 @@
-const CACHE = "qve-shell-v2";
-const SHELL = ["./index.html", "./manifest.json"];
+const CACHE = "qve-shell-v3";
+const SHELL = ["./manifest.json"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)));
@@ -19,6 +19,23 @@ self.addEventListener("fetch", e => {
   const url = new URL(e.request.url);
   // لا يتم تخزين طلبات قاعدة البيانات مؤقتًا — يجب أن تصل دائمًا مباشرة
   if (url.hostname.includes("supabase.co")) return;
+
+  // صفحة index.html: شبكة أولًا دائمًا حتى تصل كل التحديثات فورًا، ونخزّنها فقط كنسخة احتياطية للعمل دون اتصال
+  const isAppShellPage = e.request.mode === "navigate" || url.pathname.endsWith("/") || url.pathname.endsWith("index.html");
+  if (isAppShellPage) {
+    e.respondWith(
+      fetch(e.request)
+        .then(res => {
+          const copy = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, copy));
+          return res;
+        })
+        .catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // باقي الملفات (الأيقونات، الإعدادات...): من التخزين المؤقت أولًا لسرعة التحميل
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request))
   );
