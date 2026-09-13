@@ -476,7 +476,7 @@
   <div class="tabs">
     <button class="tabbtn active" id="tabEntry" type="button">تسجيل مخالفة</button>
     <button class="tabbtn" id="tabMine" type="button">سجل مخالفاتي</button>
-    <button class="tabbtn" id="tabAlerts" type="button">🚨 البلاغات</button>
+    <button class="tabbtn" id="tabAlerts" type="button" style="display:none;">🚨 البلاغات</button>
   </div>
 
   <section id="viewEntry">
@@ -887,8 +887,13 @@ function refreshIdBadge(){
     }else{
       btn.style.display = "none";
     }
+    $("tabAlerts").style.display = isMonitor ? "" : "none";
+    if(!isMonitor && $("tabAlerts").classList.contains("active")){
+      switchTab("entry");
+    }
   }else{
     $("idRow").style.display = "none";
+    $("tabAlerts").style.display = "none";
   }
 }
 
