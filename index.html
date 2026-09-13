@@ -476,6 +476,7 @@
   <div class="tabs">
     <button class="tabbtn active" id="tabEntry" type="button">تسجيل مخالفة</button>
     <button class="tabbtn" id="tabMine" type="button">سجل مخالفاتي</button>
+    <button class="tabbtn" id="tabAlerts" type="button">🚨 البلاغات</button>
   </div>
 
   <section id="viewEntry">
@@ -601,6 +602,19 @@
       <div id="mineList" class="mine-list"></div>
       <div id="mineEmpty" class="empty-note" style="display:none;">لا توجد مخالفات مسجّلة باسمك بعد.</div>
       <div id="mineLoading" class="hint" style="text-align:center; display:none;">جارٍ التحميل...</div>
+    </div>
+  </section>
+
+  <section id="viewAlerts" style="display:none;">
+    <div class="card">
+      <div class="mine-head">
+        <h3>🚨 بلاغات الهروب من الحصص</h3>
+        <button id="btnRefreshAlerts" type="button" class="ghostlink">↻ تحديث</button>
+      </div>
+      <div class="hint">تُعرض هنا جميع بلاغات هروب الطلاب المُرسَلة عبر التطبيق، الأحدث أولًا.</div>
+      <div id="alertsList" class="mine-list"></div>
+      <div id="alertsEmpty" class="empty-note" style="display:none;">لا توجد بلاغات هروب مسجَّلة بعد.</div>
+      <div id="alertsLoading" class="hint" style="text-align:center; display:none;">جارٍ التحميل...</div>
     </div>
   </section>
 
@@ -1415,14 +1429,16 @@ function initGate(){
   $("btnSwitchUser").addEventListener("click", switchUser);
 }
 
-/* ===================== سجل مخالفاتي ===================== */
+/* ===================== سجل مخالفاتي / البلاغات ===================== */
 function switchTab(which){
-  const isEntry = which === "entry";
-  $("tabEntry").classList.toggle("active", isEntry);
-  $("tabMine").classList.toggle("active", !isEntry);
-  $("viewEntry").style.display = isEntry ? "" : "none";
-  $("viewMine").style.display = isEntry ? "none" : "";
-  if(!isEntry) loadMyViolations();
+  $("tabEntry").classList.toggle("active", which === "entry");
+  $("tabMine").classList.toggle("active", which === "mine");
+  $("tabAlerts").classList.toggle("active", which === "alerts");
+  $("viewEntry").style.display = which === "entry" ? "" : "none";
+  $("viewMine").style.display = which === "mine" ? "" : "none";
+  $("viewAlerts").style.display = which === "alerts" ? "" : "none";
+  if(which === "mine") loadMyViolations();
+  if(which === "alerts") loadEscapeAlerts();
 }
 
 function degreePill(d){
@@ -1469,6 +1485,62 @@ async function loadMyViolations(){
   }
 }
 
+function formatAlertTimestamp(iso){
+  if(!iso) return { day:"—", date:"—", time:"—" };
+  const d = new Date(iso);
+  // تحويل من UTC إلى توقيت السعودية (UTC+3، بلا توقيت صيفي)
+  const riyadh = new Date(d.getTime() + 3*3600*1000);
+  const day = ARABIC_DAYS[riyadh.getUTCDay()];
+  const dd = String(riyadh.getUTCDate()).padStart(2,"0");
+  const mm = String(riyadh.getUTCMonth()+1).padStart(2,"0");
+  const yyyy = riyadh.getUTCFullYear();
+  let hh = riyadh.getUTCHours();
+  const min = String(riyadh.getUTCMinutes()).padStart(2,"0");
+  const ampm = hh >= 12 ? "م" : "ص";
+  hh = hh % 12; if(hh === 0) hh = 12;
+  return { day, date: dd + "/" + mm + "/" + yyyy, time: hh + ":" + min + " " + ampm };
+}
+
+async function loadEscapeAlerts(){
+  const listEl = $("alertsList"), emptyEl = $("alertsEmpty"), loadEl = $("alertsLoading");
+  listEl.innerHTML = ""; emptyEl.style.display = "none"; loadEl.style.display = "block";
+  try{
+    const url = SUPABASE_URL + "/rest/v1/escape_alerts"
+      + "?select=student_name,student_id,class,period,reporting_teacher,recipients,created_at"
+      + "&order=created_at.desc&limit=200";
+    const res = await fetch(url, {
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY }
+    });
+    if(!res.ok) throw new Error(await res.text());
+    const rows = await res.json();
+    loadEl.style.display = "none";
+    if(!rows.length){ emptyEl.style.display = "block"; return; }
+    listEl.innerHTML = rows.map(r => {
+      const t = formatAlertTimestamp(r.created_at);
+      const recipients = Array.isArray(r.recipients) ? r.recipients.join("، ") : "—";
+      return `
+      <div class="mine-item" style="border-inline-start:3px solid var(--red);">
+        <div class="top-row">
+          <div>
+            <div class="st-name">${escapeHtml(r.student_name || "—")}</div>
+            <div class="st-class">${escapeHtml(r.class || "—")}${r.student_id ? " · رقم الطالب " + escapeHtml(r.student_id) : ""}</div>
+          </div>
+          <span class="degree-pill" style="background:color-mix(in srgb, var(--red) 14%, white); color:var(--red);">🚨 هروب</span>
+        </div>
+        <div class="vtext">${r.period ? "الحصة: " + escapeHtml(r.period) : "الحصة: —"}</div>
+        <div class="vmeta">
+          <span>👤 المعلم الراصد: ${escapeHtml(r.reporting_teacher || "—")}</span>
+          <span>📅 ${escapeHtml(t.day)} ${escapeHtml(t.date)} — ${escapeHtml(t.time)}</span>
+          <span>🔔 تم التنبيه: ${escapeHtml(recipients)}</span>
+        </div>
+      </div>
+    `;}).join("");
+  }catch(e){
+    loadEl.style.display = "none";
+    toast("تعذّر تحميل البلاغات، تحقق من الاتصال", true);
+  }
+}
+
 /* ===================== بدء التشغيل ===================== */
 function boot(){
   initGate();
@@ -1492,7 +1564,9 @@ function boot(){
   $("btnSave").addEventListener("click", saveViolation);
   $("tabEntry").addEventListener("click", ()=>switchTab("entry"));
   $("tabMine").addEventListener("click", ()=>switchTab("mine"));
+  $("tabAlerts").addEventListener("click", ()=>switchTab("alerts"));
   $("btnRefreshMine").addEventListener("click", loadMyViolations);
+  $("btnRefreshAlerts").addEventListener("click", loadEscapeAlerts);
 
   updateDots();
   updateSaveBtn();
